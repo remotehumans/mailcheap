@@ -13,11 +13,11 @@ import { normalizeEmail } from "@/lib/validation";
 import Newsletter from "@/models/Newsletter";
 
 const PER_IP = { name: "subscribe-ip", limit: 5, window: "10 m" };
-// Only alerts: refusing signups past a shared limit would let one flooder block every real signup.
-// A flood from many IPs (list bombing) still needs a look: it fills the list with spam traps.
+// A newsletter-wide ceiling also limits list bombing across changing or forged IPs.
 const PER_NEWSLETTER = { name: "subscribe-newsletter", limit: 300, window: "10 m" };
 
 export async function subscribe(_state, formData) {
+	if (process.env.SIGNUPS_ENABLED === "false") return { error: "Signups are not open yet" };
 	// People never see this field; bots fill in every input they find.
 	if (formData.get("website")) return { ok: true };
 
@@ -40,10 +40,11 @@ export async function subscribe(_state, formData) {
 			sendAlert({
 				key: `signup-flood:${newsletter.slug}`,
 				title: "Website signup flood",
-				detail: `Over ${PER_NEWSLETTER.limit} signups to ${newsletter.name} in 10 minutes. They still go through (${PER_IP.limit} per visitor per 10 minutes); check new contacts for junk.`,
+				detail: `Over ${PER_NEWSLETTER.limit} signups to ${newsletter.name} in 10 minutes. Signups are refused until the limit resets; check new contacts for junk.`,
 				path: "/contacts",
 			})
 		);
+		return { error: "Signups are temporarily paused. Please try again later." };
 	}
 
 	const { contact, created } = await upsertContact({ newsletter, email, source: "website", resubscribe: true });

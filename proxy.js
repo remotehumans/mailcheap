@@ -4,6 +4,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/session-token";
 
 // Reachable without a session: recipients, mail providers, AWS, QStash, and API-key clients.
 const PUBLIC_PATHS = [
+	/^\/api\/health$/,
 	/^\/favicon\.ico$/,
 	/^\/login$/,
 	/^\/unsubscribe$/,

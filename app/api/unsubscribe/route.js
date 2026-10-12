@@ -1,3 +1,4 @@
+import { readLimitedBody } from "@/lib/request-body";
 import { NextResponse } from "next/server";
 import { connectDb } from "@/lib/db";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
@@ -67,7 +68,10 @@ export function GET(request) {
 // RFC 8058 one-click endpoint. The confirmation page form posts here too, with source=page.
 export async function POST(request) {
 	const token = new URL(request.url).searchParams.get("token");
-	const form = await request.formData().catch(() => null);
+	let bytes;
+	try { bytes = await readLimitedBody(request, 8 * 1024); }
+	catch (error) { return new NextResponse(null, { status: error.status || 400, headers: NO_STORE }); }
+	const form = await new Response(bytes, { headers: { "Content-Type": request.headers.get("content-type") || "" } }).formData().catch(() => null);
 	const isPageForm = form?.get("source") === "page";
 
 	function respond(status, pageStatus) {

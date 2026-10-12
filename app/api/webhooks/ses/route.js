@@ -1,3 +1,4 @@
+import { readLimitedText } from "@/lib/request-body";
 import { NextResponse } from "next/server";
 import { handleSesEvent } from "@/lib/ses-events";
 import { isValidSubscribeUrl, verifySnsMessage } from "@/lib/sns";
@@ -49,8 +50,9 @@ export async function POST(request) {
 	const topicArn = process.env.SES_SNS_TOPIC_ARN;
 	if (!topicArn) return reply(503, { error: "SES webhook is not configured" });
 
-	const body = await request.text();
-	if (body.length > MAX_BODY_LENGTH) return reply(413, { error: "Body is too large" });
+	let body;
+	try { body = await readLimitedText(request, MAX_BODY_LENGTH); }
+	catch (error) { return reply(error.status || 400, { error: "Invalid request body" }); }
 	const message = parseJson(body);
 	if (!isPlainObject(message)) return reply(400, { error: "Invalid JSON" });
 	if (message.TopicArn !== topicArn) return reply(403, { error: "Unknown topic" });

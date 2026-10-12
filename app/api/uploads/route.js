@@ -1,3 +1,4 @@
+import { readLimitedBody } from "@/lib/request-body";
 import { getSession } from "@/lib/auth";
 import { putImage } from "@/lib/blob";
 import { MAX_UPLOAD_BYTES } from "@/lib/upload-image";
@@ -21,7 +22,9 @@ export async function POST(request) {
 	const type = IMAGE_TYPES[contentType];
 	if (!type) return Response.json({ error: "Use a PNG, JPEG, GIF or WebP image" }, { status: 415 });
 
-	const bytes = new Uint8Array(await request.arrayBuffer());
+	let bytes;
+	try { bytes = await readLimitedBody(request, MAX_UPLOAD_BYTES); }
+	catch (error) { return Response.json({ error: "Invalid request body" }, { status: error.status || 400 }); }
 	if (bytes.length > MAX_UPLOAD_BYTES) {
 		return Response.json({ error: "Images must be under 4 MB" }, { status: 413 });
 	}

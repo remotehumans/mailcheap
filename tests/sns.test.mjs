@@ -83,15 +83,15 @@ test("the signing string follows the AWS format for each message type", () => {
 	assert.equal(buildSigningString(null), null);
 });
 
-test("signature versions 1 (SHA1) and 2 (SHA256) verify", async () => {
+test("only signature version 2 (SHA256) verifies", async () => {
 	const { verify } = createTestVerifier();
 	const withoutSubject = { ...notification };
 	delete withoutSubject.Subject;
 
-	assert.equal(await verify(signMessage(notification, "1")), true);
+	assert.equal(await verify(signMessage(notification, "1")), false);
 	assert.equal(await verify(signMessage(notification, "2")), true);
 	assert.equal(await verify(signMessage(withoutSubject)), true);
-	assert.equal(await verify(signMessage(confirmation, "1")), true);
+	assert.equal(await verify(signMessage(confirmation, "1")), false);
 	assert.equal(await verify(signMessage({ ...confirmation, Type: "UnsubscribeConfirmation" })), true);
 });
 

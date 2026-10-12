@@ -13,7 +13,10 @@ function noContent() {
 // Archive pages send one beacon per issue per browser and day; this only counts the ones from people.
 export async function POST(request) {
 	const userAgent = request.headers.get("user-agent") ?? "";
-	const { id } = await request.json().catch(() => ({}));
+	let body;
+	try { body = JSON.parse(await readLimitedText(request, 2048)); }
+	catch (error) { return NextResponse.json({ error: "Invalid request body" }, { status: error.status || 400 }); }
+	const { id } = body || {};
 	if (!isObjectIdString(id) || !userAgent || BOT_PATTERN.test(userAgent)) return noContent();
 	if (await isRateLimited({ ...RATE_LIMIT, key: getClientIp(request.headers) })) return noContent();
 

@@ -1,3 +1,4 @@
+import { readLimitedText } from "@/lib/request-body";
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/api-keys";
 import { listPublishedIssues } from "@/lib/archive-data";
@@ -97,7 +98,10 @@ export async function POST(request) {
 	if (!apiKey) return fail(401, "Invalid API key");
 	if (await isRateLimited({ ...DRAFTS_PER_KEY, key: String(apiKey._id) })) return fail(429, "Too many drafts");
 
-	const input = readInput(await request.json().catch(() => null));
+	let body;
+	try { body = JSON.parse(await readLimitedText(request, 1024 * 1024)); }
+	catch (error) { return fail(error.status || 400, "Invalid request body"); }
+	const input = readInput(body);
 	if (input.error) return fail(400, input.error);
 
 	await connectDb();

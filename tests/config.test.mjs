@@ -25,3 +25,9 @@ test("the server doesn't start with a short secret or password", () => {
 		process.env = previous;
 	}
 });
+
+test("SES sandbox, disabled accounts and failed checks always block sending", async () => {
+ const { getSesSendProblem } = await import("../lib/config.js");
+ for (const account of [undefined, {}, { error: "unavailable" }, { productionAccess: false, sendingEnabled: true }, { productionAccess: true, sendingEnabled: false }]) assert.ok(getSesSendProblem(account));
+ assert.equal(getSesSendProblem({ productionAccess: true, sendingEnabled: true }), null);
+});

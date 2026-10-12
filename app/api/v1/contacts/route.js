@@ -1,3 +1,4 @@
+import { readLimitedText } from "@/lib/request-body";
 import { NextResponse, after } from "next/server";
 import { sendAlert } from "@/lib/alerts";
 import { authenticateRequest } from "@/lib/api-keys";
@@ -47,7 +48,11 @@ export async function POST(request) {
 	const apiKey = await authenticateRequest(request);
 	if (!apiKey) return fail(401, "Invalid API key");
 
-	const input = readInput(await request.json().catch(() => null));
+	if (process.env.SIGNUPS_ENABLED === "false") return fail(503, "Signups are not open yet");
+	let body;
+	try { body = JSON.parse(await readLimitedText(request, 16 * 1024)); }
+	catch (error) { return fail(error.status || 400, "Invalid request body"); }
+	const input = readInput(body);
 	if (input.error) return fail(400, input.error);
 
 	const keyId = String(apiKey._id);

@@ -19,6 +19,7 @@ const SECURITY_HEADERS = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	poweredByHeader: false,
+	output: "standalone",
 	images: {
 		remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
 	},
