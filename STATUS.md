@@ -1,6 +1,6 @@
 # Bring Your Own Brain: Mailcheap setup status
 
-Updated: 13 October 2026, 11:34 Europe/London.
+Updated: 13 October 2026, 21:56 Europe/London.
 
 ## Operational
 
@@ -168,14 +168,37 @@ credential was found. Elliott selected **e@remotehumans.ai** for newsletter
 replies; this is saved. No hello alias was created. No mail test was sent and
 no existing routing/DNS record was changed.
 
+## Latest approval check: 13 October, 21:56 BST
+
+- The temporary byob-mailcheap CLI session has expired. The existing scoped
+  credential in **AWS SES - Bring Your Own Brain** successfully read SES status
+  without storing or exposing secret values.
+- ProductionAccessEnabled remains false, review status remains DENIED with
+  case 179188520500640, and SentLast24Hours remains zero. The previous case
+  correspondence requested more information, so the API label alone does not
+  establish a final refusal.
+- The AWS console session has also expired and now shows sign-in. No console
+  password exists in the saved AWS vault item. New support correspondence
+  cannot be checked until Elliott signs back in. The last verified case content
+  was the approved response posted at 11:34 BST; no later AWS reply was visible
+  at the previous check.
+- The follow-up **Finish BYOB Mailcheap setup** is paused for this operator
+  dependency. Sending and signup flags were not changed. No email, contact,
+  campaign, sending job or support reply was created.
+
 ## Exact remaining steps
 
-1. Await AWS approval in support case 179188520500640. The requested response
-   is posted and the sending identity is verified. If AWS requests further evidence, answer that case;
-   do not create another AWS account or buy a support plan for this setup.
-2. After SES production access is verified, review launch readiness with Codex.
-   Provider configuration, DKIM, postal address and reply-to are complete. This task leaves
-   both sending and signups off. No test email is authorised.
+1. Sign back into the existing AWS account in the in-app browser, then tell
+   Codex to resume the Mailcheap setup. Account ID: **473041657562**. Open
+   support case **179188520500640**. Do not create an account or console access
+   for the scoped mailcheap-byob runtime user.
+2. Codex can then inspect any AWS response and resume monitoring. Production
+   access remains off. If AWS requests more evidence, prepare a concrete
+   response for Elliott's approval before posting it.
+3. After SES production access is verified, review launch readiness with Codex.
+   Provider configuration, DKIM, postal address and reply-to are complete.
+   Sending and signups stay off until explicit launch authorisation. No test
+   email is authorised. Website signup integration remains a separate task.
 
 ### AWS support response posted at 11:34 BST
 
