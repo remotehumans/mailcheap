@@ -1,6 +1,6 @@
 # Bring Your Own Brain: Mailcheap setup status
 
-Updated: 13 October 2026, Europe/London.
+Updated: 13 October 2026, 11:34 Europe/London.
 
 ## Operational
 
@@ -68,9 +68,13 @@ remain disabled. No email was sent; no contact was created or imported.
   says additional information is required before a final decision. It requests
   volume, opt-in, bounce handling and sample content/description. Do not interpret
   this as a final refusal without the case correspondence.
-- MAIL FROM is verified. DKIM remains PENDING at the final check; all three
-  issued CNAMEs resolve correctly through public DNS. AWS advises allowing up to
-  72 hours for verification. Production access remains false.
+- MAIL FROM and DKIM are verified. SES reports VerifiedForSendingStatus=true
+  and DkimAttributes.Status=SUCCESS. All three issued CNAMEs resolve correctly.
+  Production access remains false.
+- Elliott approved posting the prepared response. It was submitted and visibly
+  confirmed in case correspondence at 11:34 BST on 13 October. The response
+  gives 500–1,000 initial subscribers, 2,000–4,000 newsletter emails/month plus
+  confirmations, opt-in, suppression, content details, and successful DKIM.
 
 Support case:
 https://support.console.aws.amazon.com/support/home#/case/?displayId=179188520500640
@@ -166,16 +170,14 @@ no existing routing/DNS record was changed.
 
 ## Exact remaining steps
 
-1. Approve posting the prepared response in support case 179188520500640.
-   Codex requested explicit permission for this external support message.
-   DKIM must be verified in eu-north-1 before AWS grants production access.
-2. Await AWS approval. If AWS requests further evidence, answer that case;
+1. Await AWS approval in support case 179188520500640. The requested response
+   is posted and the sending identity is verified. If AWS requests further evidence, answer that case;
    do not create another AWS account or buy a support plan for this setup.
-3. After provider configuration, DKIM and SES production access are verified,
-   and the reply-to is set, review launch readiness with Codex. This task leaves
+2. After SES production access is verified, review launch readiness with Codex.
+   Provider configuration, DKIM, postal address and reply-to are complete. This task leaves
    both sending and signups off. No test email is authorised.
 
-### Prepared AWS support response
+### AWS support response posted at 11:34 BST
 
 Website/application: https://remotehumans.ai. Newsletter admin application:
 https://newsletter.remotehumans.ai.
@@ -204,9 +206,10 @@ unsubscribe. The supplied legal business postal address is saved in the footer.
 
 Region: eu-north-1. Sending identity: mail.remotehumans.ai. RSA 2048 Easy DKIM
 CNAMEs have been published and resolve publicly. Custom MAIL FROM
-bounce.mail.remotehumans.ai is verified. DKIM verification is pending at the
-time of this response. Sending stays disabled until identity verification and
-production approval are confirmed.
+bounce.mail.remotehumans.ai is verified. RSA 2048 Easy DKIM verification has now
+succeeded, and SES reports VerifiedForSendingStatus=true and
+DkimAttributes.Status=SUCCESS. Sending stays disabled until production approval
+is confirmed.
 
 Website signup integration remains a separate task; no website repository was
 changed. Do not expose a Mailcheap API key in browser code.

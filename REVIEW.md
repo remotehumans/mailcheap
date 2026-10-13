@@ -92,7 +92,7 @@ No SES send was used to validate this change.
 3. Real SNS subscription confirmation and both configured QStash signing keys
    passed live verification on 13 October. QStash authenticated reads also passed.
    Real email/bounce delivery remains untested because no email was authorised.
-   Keep sending disabled while DKIM and SES production access are pending.
+   DKIM is verified. Keep sending disabled while SES production access is pending.
 4. Vercel Blob is optional and unconfigured. Editor image uploads stay unavailable;
    remotely hosted images remain usable.
 5. The upstream release has no maintenance/support commitment. Keep the fork's
@@ -128,4 +128,5 @@ Coolify's health-check command required curl or wget. Commit cf2e59a adds curl
 and CA certificates to the image; the deployed runtime still runs as node.
 The SES runtime IAM user is restricted to the intended sender, domain identity
 and configuration set, plus SES status reads. The production-access case requests
-additional details; DKIM is still pending. STATUS.md contains the remaining steps.
+additional details; the approved response is posted and DKIM is verified.
+STATUS.md contains the remaining steps.
