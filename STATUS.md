@@ -1,169 +1,173 @@
 # Bring Your Own Brain: Mailcheap setup status
 
-Updated: 13 October 2026, 09:00 Europe/London.
+Updated: 13 October 2026, Europe/London.
+
+## Operational
+
+Mailcheap is deployed and healthy at https://newsletter.remotehumans.ai.
+HTTPS and the saved admin login passed live verification. Bring Your Own Brain
+exists, has confirmed opt-in enabled, and has zero contacts. Sending and signups
+remain disabled. No email was sent; no contact was created or imported.
+
+- Admin login: https://newsletter.remotehumans.ai/login
+- Newsletter: https://newsletter.remotehumans.ai/newsletters/6acdfdf439733a41284f204d
+- Fork: https://github.com/remotehumans/mailcheap
+- Coolify: https://cool.remotehumans.co
+- Local checkout: /Users/elliott/Documents/AI Projects_local/mailcheap
 
 ## Completed
 
-- Forked https://github.com/marclou/mailcheap to
-  https://github.com/remotehumans/mailcheap.
-  GitHub identifies remotehumans as a user account, not an organisation.
-- Cloned into /Users/elliott/Documents/AI Projects_local/mailcheap.
-- Completed the source security review in REVIEW.md and pushed the fixes.
-  The security release is 274b029; the database bootstrap addition is b3bad35.
-- Passed 212 unit tests, ESLint, production build and git diff --check.
-  The runtime dependency audit reported zero known vulnerabilities.
-- Created a private, persistent Coolify MongoDB with no public database port.
-- Created the Coolify app and configured runtime-only secrets. APP_URL is also
-  available to the build; passwords and signing secrets are not build arguments.
-- Generated and saved the admin login as **Mailcheap - Bring Your Own Brain** in
-  Bitwarden organisation **AI Agents**, collection **AI Agent Logins**.
-- Added the two absent DNS records below. No existing records were changed.
-- Refreshed and checked the vault. No AWS/SES or Upstash/QStash credentials were
-  found. No accounts were created.
-- Sending and signups are configured off. The code additionally refuses SES
-  sandbox/unknown/disabled-account sending even if SENDING_ENABLED is enabled.
+- Forked and cloned marclou/mailcheap. GitHub identifies remotehumans as a user
+  account rather than an organisation.
+- Reviewed source security and fixed the findings described in REVIEW.md.
+- Passed 212 unit tests, ESLint, production build and git diff --check before
+  provisioning. The runtime dependency audit reported zero known vulnerabilities.
+- Fixed the failed Coolify deployment: the runtime image lacked curl/wget for
+  Coolify's health check. Commit cf2e59a adds curl and CA certificates. The live
+  deployment of that image passed readiness and HTTPS checks.
+- Used the replacement Vaultwarden item **coolify rh api key** to restore
+  read:sensitive access and update CLI context **remote-humans**.
+- Deployed a private, persistent Coolify MongoDB with no public database port.
+  The application now uses user **mailcheap**, restricted to readWrite on database
+  **mailcheap**. Removed both bootstrap-password environment rows and the
+  disabled one-time bootstrap task. No MongoDB root credential remains in the app.
+- Generated the admin password/session secret and stored runtime secrets in
+  Coolify, never build arguments or Git. Saved the admin login in the shared vault.
+- Created Bring Your Own Brain, slug **bring-your-own-brain**, sender
+  **Remote Humans <byob@mail.remotehumans.ai>**, with confirmed opt-in enabled.
+  Welcome, cleanup and public archive are disabled. Postal address/reply-to await
+  Elliott. The sender is an SES identity; no email mailbox was created.
+- Verified the newsletter and zero-contact counts persisted after redeployment.
 
-## Morning check: 13 October 2026
+## AWS / SES
 
-The scheduled follow-up confirmed that deployment logs remain unavailable, the
-app remains exited/unhealthy, and the private MongoDB remains running/healthy
-with public access disabled. A refreshed vault search again found no AWS/SES
-or QStash credentials. No deployment retry was attempted without diagnostic
-access. Sending and signups remain configured off. No email or contact action
-was performed.
+- Existing account: **Curiosity Unlocked**, account ID **473041657562**.
+- Region: **eu-north-1**, Europe (Stockholm).
+- Installed the official AWS CLI and connected profile **byob-mailcheap** using
+  the existing console session. No root access keys or new external account.
+- Created domain identity **mail.remotehumans.ai**, Easy DKIM RSA 2048.
+- Created custom MAIL FROM **bounce.mail.remotehumans.ai**, reject on MX failure.
+- Created configuration set **mailcheap**, with SES open/click tracking off.
+- Created standard SNS topic **mailcheap-ses-events**, SignatureVersion **2**.
+  Its publish policy permits SES only from this account/configuration set.
+- Configured bounce, complaint, delivery, delay, reject and rendering-failure
+  events to SNS. Enabled SES account-level bounce and complaint suppression.
+- Confirmed the HTTPS SNS subscription to
+  https://newsletter.remotehumans.ai/api/webhooks/ses. This was an SNS protocol
+  confirmation, not an email. No synthetic bounce or delivery event was published.
+- After Elliott explicitly approved the exact scope, created IAM user
+  **mailcheap-byob**, policy **MailcheapSESRuntime**, and one persistent access key.
+  Sending permissions are restricted to **byob@mail.remotehumans.ai**, the domain
+  identity and configuration set; remaining permissions read SES status/identities.
+  Scoped runtime GetAccount/GetEmailIdentity reads passed.
+- Saved the runtime key as **AWS SES - Bring Your Own Brain** in the shared vault
+  and configured Coolify runtime variables.
+- Submitted the production-access request; support case **179188520500640**.
+  The SES API currently labels review status DENIED, but the support correspondence
+  says additional information is required before a final decision. It requests
+  volume, opt-in, bounce handling and sample content/description. Do not interpret
+  this as a final refusal without the case correspondence.
+- MAIL FROM is verified. DKIM remains PENDING at the final check; all three
+  issued CNAMEs resolve correctly through public DNS. AWS advises allowing up to
+  72 hours for verification. Production access remains false.
 
-## Current blocker: Coolify log access
+Support case:
+https://support.console.aws.amazon.com/support/home#/case/?displayId=179188520500640
 
-The first application deployment failed and the app is not healthy or live.
-The configured CLI token has read/write access but lacks read:sensitive.
-Coolify redacts deployment logs, database passwords, private keys and environment
-values. This prevents diagnosis of the deployment failure. The older Coolify API
-credential in Bitwarden returns 401 and is not a usable replacement.
+The AWS Support CLI cannot read case correspondence without a paid support
+subscription. The existing Basic console session can read it; no support-plan
+upgrade was made or is required just to view this case.
 
-Add **read:sensitive** to the token used by the **remote-humans** CLI context,
-keeping read/write. Use Coolify > Keys & Tokens > API tokens. If a replacement is
-required, update the CLI context or save it in Bitwarden, never in chat.
-A root token is not needed.
+## QStash
 
-Official permission reference:
-https://coolify.io/docs/core/security/credentials/api-tokens
-
-## URLs and resource identifiers
-
-- Intended app: https://newsletter.remotehumans.ai
-- Intended admin login: https://newsletter.remotehumans.ai/login
-- Fork: https://github.com/remotehumans/mailcheap
-- Coolify: https://cool.remotehumans.co
-- Server: Remote Humans Automations, 91.98.23.109
-- Project: Remote Humans Apps; environment: production_internal
-- App UUID: qeeqrl9snjfjoc4nrjpoeg8h
-- MongoDB UUID: qcldvire3pxjrqd7eig5bf4j
-- Failed deployment UUID: ttzgdvl86c0wa05g2tegtmz6
-
-HTTPS and admin login have **not** passed live verification. The named newsletter
-has **not** yet been created; that follows a healthy deployment.
+- Used the existing free EU region, endpoint
+  https://qstash-eu-central-1.upstash.io.
+- Saved existing credentials as **Upstash QStash - Bring Your Own Brain** in the
+  shared vault and configured runtime-only Coolify variables.
+- Authenticated read-only API returned 200. Both current and next signing keys
+  passed live local-signature verification. The send-batch handler returned 409
+  Sending is off; the scheduled handler safely ignored the empty request.
+- Missing signatures return 403. No QStash jobs or schedules were published.
+- No plan upgrade, payment details or account creation.
 
 ## Credentials and flags (names only)
 
-- Bitwarden login: Mailcheap - Bring Your Own Brain
-- Login identifier: admin@newsletter.remotehumans.ai. This is an application
-  username, not a newly created email mailbox.
-- Coolify: MONGODB_URI, ADMIN_EMAIL, ADMIN_PASSWORD, SESSION_SECRET
-- SENDING_ENABLED=false; SIGNUPS_ENABLED=false
-- BOOTSTRAP_DATABASE_PASSWORD: temporary, still configured. Once the app is
-  healthy, create the mailcheap database-scoped readWrite user, replace the
-  initial bootstrap URI, and remove this variable and the one-time task.
-- Existing Cloudflare credential: cloudflare-api-token-rhagi-ai-agents
-- Existing Coolify CLI context: remote-humans
-- Existing Bitwarden coolify-api-token is invalid and was not used to configure
-  the application.
+Shared vault: organisation **AI Agents**, collection **AI Agent Logins**.
+
+- **Mailcheap - Bring Your Own Brain**: saved admin login.
+  Username: admin@newsletter.remotehumans.ai (application identifier, not a mailbox).
+- **AWS SES - Bring Your Own Brain**: scoped IAM runtime credentials.
+- **Upstash QStash - Bring Your Own Brain**: existing provider credentials.
+- **coolify rh api key**: replacement Coolify token.
+- **cloudflare-api-token-rhagi-ai-agents**: existing add-only DNS credential used.
+
+Coolify runtime variables:
+MONGODB_URI, ADMIN_EMAIL, ADMIN_PASSWORD, SESSION_SECRET,
+SES_REGION, SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY, SES_CONFIGURATION_SET,
+SES_SNS_TOPIC_ARN, QSTASH_URL, QSTASH_TOKEN, QSTASH_CURRENT_SIGNING_KEY,
+QSTASH_NEXT_SIGNING_KEY. No secret variables are build-time variables.
+
+**SENDING_ENABLED=false; SIGNUPS_ENABLED=false.**
+The app also blocks sandbox, unknown or disabled SES accounts even if the
+sending flag is changed. Retain SESSION_SECRET to preserve old unsubscribe links.
 
 ## DNS records added
+
+No existing DNS record was changed or deleted.
 
 | Type | Name | Value | Proxy |
 | --- | --- | --- | --- |
 | A | newsletter.remotehumans.ai | 91.98.23.109 | Proxied |
 | TXT | _dmarc.remotehumans.ai | v=DMARC1; p=none; | Not applicable |
+| CNAME | oodrm75sqjqkuhm5pvpukhuism4vd46i._domainkey.mail.remotehumans.ai | oodrm75sqjqkuhm5pvpukhuism4vd46i.dkim.amazonses.com | DNS only |
+| CNAME | wyhkraryjcxyshwmjyezzqomqt4prncl._domainkey.mail.remotehumans.ai | wyhkraryjcxyshwmjyezzqomqt4prncl.dkim.amazonses.com | DNS only |
+| CNAME | 4rfwhnfycx4ezxs7do7yp3kryzzhmzbp._domainkey.mail.remotehumans.ai | 4rfwhnfycx4ezxs7do7yp3kryzzhmzbp.dkim.amazonses.com | DNS only |
+| MX | bounce.mail.remotehumans.ai | 10 feedback-smtp.eu-north-1.amazonses.com | Not applicable |
+| TXT | bounce.mail.remotehumans.ai | v=spf1 include:amazonses.com ~all | Not applicable |
 
-The DMARC name had no existing record when checked. No SES DKIM or MAIL FROM
-records have been added because SES has not yet issued identity-specific values.
-Never invent those DKIM records.
+## Live verification
 
-## Remaining operator steps after Coolify access is restored
+- HTTPS readiness: 200, database ping succeeds, both feature flags false.
+- Saved admin login succeeds; session cookie is __Host-mailcheap_session,
+  Secure, HttpOnly, SameSite=Lax, Path=/.
+- Protected upload/signup APIs return 401 without credentials.
+- Unsubscribe empty/invalid request returns 400.
+- Unknown-topic SNS request returns 403; real AWS subscription confirmed.
+- Unsigned QStash jobs return 403; both configured keys verified separately.
+- Newsletter persists after redeployment; total contacts All/Active/Pending/etc: 0.
+- Latest deployment **yfdu56g7sftbohjhl0puhcjq** finished successfully.
+- Private MongoDB remains healthy; temporary bootstrap configuration removed.
+- Local fork changes are pushed only to remotehumans/mailcheap.
 
-### 1. AWS / SES
+## Exact remaining steps
 
-Use your existing AWS account, or create one yourself if you do not have one.
-Enable MFA. Do not supply root account access keys.
+1. Give Codex a monitored reply-to address and the real business postal address.
+   The address will appear in every newsletter footer. Neither was invented.
+2. Give Codex the expected first-month subscriber/email volume. AWS asks for an
+   approximate daily or monthly volume; one weekly issue to 100 subscribers is
+   about 400 newsletter emails/month, plus confirmation emails.
+3. Once DKIM is verified in eu-north-1, respond in support case 179188520500640
+   with that estimate, website https://remotehumans.ai, MARKETING/weekly newsletter,
+   confirmed opt-in, verified SNS suppression, and this content description:
+   Bring Your Own Brain covers AI tools and agents, how work is changing, and
+   practical guidance on the human advantage. Codex has the technical details
+   ready; no sample email needs to be sent.
+4. Await AWS approval. If AWS requests further evidence, answer that case;
+   do not create another AWS account or buy a support plan for this setup.
+5. After provider configuration, DKIM and SES production access are verified,
+   and the reply-to/postal address are set, review launch readiness with Codex.
+   This task leaves both sending and signups off. No test email is authorised.
 
-Save setup credentials in Bitwarden as **AWS - Mailcheap setup**, with:
+Website signup integration remains a separate task; no website repository was
+changed. Do not expose a Mailcheap API key in browser code.
 
-- AWS_ACCESS_KEY_ID
-- AWS_SECRET_ACCESS_KEY
-- AWS_SESSION_TOKEN, if using temporary credentials
-- AWS_REGION, for example eu-west-2
+## Infrastructure identifiers
 
-The setup identity needs scoped permission to create/read the SES identity
-mail.remotehumans.ai, set its MAIL FROM domain, manage configuration set
-mailcheap, create/configure/subscribe SNS topic mailcheap-ses-events, and
-create an IAM runtime user with its scoped inline policy and access key.
-It does not need permission to send any email for this setup. Do not grant
-unrelated AWS administration.
+- Server: Remote Humans Automations, 91.98.23.109
+- Project: Remote Humans Apps; environment: production_internal
+- App UUID: qeeqrl9snjfjoc4nrjpoeg8h
+- MongoDB UUID: qcldvire3pxjrqd7eig5bf4j
+- SNS: arn:aws:sns:eu-north-1:473041657562:mailcheap-ses-events
 
-Codex can then configure domain identity/DKIM, bounce.mail.remotehumans.ai,
-configuration set mailcheap, SNS SignatureVersion 2 and its SES event destination,
-the HTTPS subscription, and a least-privilege runtime IAM user. Codex will add
-only the issued absent DNS records, and store runtime SES credentials in Coolify.
-
-Request SES production access **in that same region** after domain verification:
-SES > Account dashboard > Get set up > Request production access. Select
-Marketing, website https://remotehumans.ai, English, and a real monitored contact
-address. Explain that Bring Your Own Brain is a weekly opt-in publication,
-uses confirmed opt-in, provides one-click unsubscribe, and suppresses bounces
-and complaints. No test email is needed to submit that request.
-
-Reference: https://docs.aws.amazon.com/ses/latest/dg/request-production-access.html
-
-### 2. Upstash / QStash
-
-Use an existing Upstash account, or create one yourself. Open QStash and save a
-Bitwarden item **Upstash QStash - Bring Your Own Brain** containing:
-
-- QSTASH_TOKEN
-- QSTASH_CURRENT_SIGNING_KEY
-- QSTASH_NEXT_SIGNING_KEY
-- QSTASH_URL if using a non-default endpoint/region
-
-Codex can then configure Coolify and verify signature rejection without sending
-email. An Upstash Redis account is optional for shared rate limiting; the initial
-app has one process and memory limits. Do not enable multiple app processes
-without shared rate limiting.
-
-Reference: https://upstash.com/docs/qstash/overall/getstarted
-
-### 3. Newsletter details and launch
-
-Provide the real business postal address and a monitored reply-to email.
-The intended sender is **Remote Humans <byob@mail.remotehumans.ai>**.
-No mailbox has been created at that address.
-
-After a healthy app deployment, Codex will create Bring Your Own Brain with slug
-bring-your-own-brain, confirmed opt-in, welcome and cleanup disabled, and no
-contacts. Until provider setup and production access are verified, keep sending
-and signups off. The future website signup integration is separate; no website
-repository has been changed and no browser-exposed API key should be used.
-
-## Still to verify and complete
-
-- Diagnose and repair the failed deployment using its logs.
-- Replace the temporary MongoDB bootstrap connection with the scoped runtime user.
-- Remove temporary bootstrap configuration and any one-time task.
-- Verify HTTPS, admin login, secure cookie flags, protected-route rejection,
-  invalid unsubscribe/job/webhook rejection, and data persistence after restart.
-- Create the newsletter and verify it has zero contacts.
-- Configure AWS and QStash once existing or user-created accounts are available.
-- Keep SENDING_ENABLED=false until SES production access is verified.
-
-No email has been sent. No contact has been imported or created. No external
-account or payment details were created. Changes and pushes are limited to the
-Mailcheap fork; remote-humans-agi and website repositories were not changed.
+No email or contact action occurred. No external account or payment details were
+created. remote-humans-agi and website repositories were not modified.

@@ -89,9 +89,10 @@ No SES send was used to validate this change.
    use shared limiting before scaling. Map size is bounded to 10,000 keys.
 2. A rotating SESSION_SECRET invalidates unsubscribe links in old emails.
    Retain it; rotate the admin password to invalidate sessions instead.
-3. Real AWS/SNS and QStash end-to-end delivery cannot be verified without their
-   credentials. Synthetic signature tests are not a real-provider integration
-   test. Sending must remain disabled until that setup is complete.
+3. Real SNS subscription confirmation and both configured QStash signing keys
+   passed live verification on 13 October. QStash authenticated reads also passed.
+   Real email/bounce delivery remains untested because no email was authorised.
+   Keep sending disabled while DKIM and SES production access are pending.
 4. Vercel Blob is optional and unconfigured. Editor image uploads stay unavailable;
    remotely hosted images remain usable.
 5. The upstream release has no maintenance/support commitment. Keep the fork's
@@ -112,3 +113,19 @@ No SES send was used to validate this change.
 Live HTTPS, login, cookie flags, endpoint rejection and database persistence
 checks are recorded in STATUS.md after deployment. No contacts or emails are
 needed for those checks.
+
+## Live deployment verification: 13 October 2026
+
+HTTPS readiness and the generated admin login passed. The production cookie has
+Secure/HttpOnly/SameSite=Lax and __Host- naming. Protected API calls and unsigned
+jobs were rejected. Real SNS subscription confirmation used SignatureVersion 2.
+Both QStash keys passed separate signed empty-request checks without publishing
+jobs or sending. MongoDB uses a database-scoped runtime user; bootstrap secrets
+and the one-time task were removed. The zero-contact newsletter persisted after
+redeployment. Runtime secrets are not exposed as build arguments.
+
+Coolify's health-check command required curl or wget. Commit cf2e59a adds curl
+and CA certificates to the image; the deployed runtime still runs as node.
+The SES runtime IAM user is restricted to the intended sender, domain identity
+and configuration set, plus SES status reads. The production-access case requests
+additional details; DKIM is still pending. STATUS.md contains the remaining steps.
