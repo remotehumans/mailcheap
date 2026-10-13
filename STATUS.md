@@ -1,6 +1,6 @@
 # Bring Your Own Brain: Mailcheap setup status
 
-Updated: 12 October 2026.
+Updated: 13 October 2026, 09:00 Europe/London.
 
 ## Completed
 
@@ -22,6 +22,15 @@ Updated: 12 October 2026.
   found. No accounts were created.
 - Sending and signups are configured off. The code additionally refuses SES
   sandbox/unknown/disabled-account sending even if SENDING_ENABLED is enabled.
+
+## Morning check: 13 October 2026
+
+The scheduled follow-up confirmed that deployment logs remain unavailable, the
+app remains exited/unhealthy, and the private MongoDB remains running/healthy
+with public access disabled. A refreshed vault search again found no AWS/SES
+or QStash credentials. No deployment retry was attempted without diagnostic
+access. Sending and signups remain configured off. No email or contact action
+was performed.
 
 ## Current blocker: Coolify log access
 
