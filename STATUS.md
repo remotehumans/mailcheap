@@ -35,8 +35,9 @@ remain disabled. No email was sent; no contact was created or imported.
   Coolify, never build arguments or Git. Saved the admin login in the shared vault.
 - Created Bring Your Own Brain, slug **bring-your-own-brain**, sender
   **Remote Humans <byob@mail.remotehumans.ai>**, with confirmed opt-in enabled.
-  Welcome, cleanup and public archive are disabled. Postal address/reply-to await
-  Elliott. The sender is an SES identity; no email mailbox was created.
+  Welcome, cleanup and public archive are disabled. Postal address is saved:
+  Node Unlock LTD, 124 City Road, London, EC1V 2NX, United Kingdom. Reply-to is
+  **e@remotehumans.ai**, as selected by Elliott. The sender is an SES identity; no mailbox was created.
 - Verified the newsletter and zero-contact counts persisted after redeployment.
 
 ## AWS / SES
@@ -139,24 +140,73 @@ No existing DNS record was changed or deleted.
 - Private MongoDB remains healthy; temporary bootstrap configuration removed.
 - Local fork changes are pushed only to remotehumans/mailcheap.
 
+## Newsletter details supplied on 13 October
+
+Elliott supplied and Codex saved this footer address:
+
+```text
+Node Unlock LTD
+124 City Road
+London
+EC1V 2NX
+United Kingdom
+```
+
+The first-month planning estimate is **500–1,000 subscribers**, approximately
+**2,000–4,000 newsletter emails/month** at four weekly issues, plus opt-in
+confirmation emails (up to approximately 500–1,000 for first-month signups).
+These are forecasts; current subscriber and contact counts remain zero.
+
+Cloudflare Email Routing is enabled/ready. The only literal-address route found
+is **e@remotehumans.ai**. **hello@remotehumans.ai** has no route, catch-all is
+explicitly disabled with a drop action, and no matching received mail or vault
+credential was found. Elliott selected **e@remotehumans.ai** for newsletter
+replies; this is saved. No hello alias was created. No mail test was sent and
+no existing routing/DNS record was changed.
+
 ## Exact remaining steps
 
-1. Give Codex a monitored reply-to address and the real business postal address.
-   The address will appear in every newsletter footer. Neither was invented.
-2. Give Codex the expected first-month subscriber/email volume. AWS asks for an
-   approximate daily or monthly volume; one weekly issue to 100 subscribers is
-   about 400 newsletter emails/month, plus confirmation emails.
-3. Once DKIM is verified in eu-north-1, respond in support case 179188520500640
-   with that estimate, website https://remotehumans.ai, MARKETING/weekly newsletter,
-   confirmed opt-in, verified SNS suppression, and this content description:
-   Bring Your Own Brain covers AI tools and agents, how work is changing, and
-   practical guidance on the human advantage. Codex has the technical details
-   ready; no sample email needs to be sent.
-4. Await AWS approval. If AWS requests further evidence, answer that case;
+1. Approve posting the prepared response in support case 179188520500640.
+   Codex requested explicit permission for this external support message.
+   DKIM must be verified in eu-north-1 before AWS grants production access.
+2. Await AWS approval. If AWS requests further evidence, answer that case;
    do not create another AWS account or buy a support plan for this setup.
-5. After provider configuration, DKIM and SES production access are verified,
-   and the reply-to/postal address are set, review launch readiness with Codex.
-   This task leaves both sending and signups off. No test email is authorised.
+3. After provider configuration, DKIM and SES production access are verified,
+   and the reply-to is set, review launch readiness with Codex. This task leaves
+   both sending and signups off. No test email is authorised.
+
+### Prepared AWS support response
+
+Website/application: https://remotehumans.ai. Newsletter admin application:
+https://newsletter.remotehumans.ai.
+
+Email type: MARKETING. Bring Your Own Brain is a weekly publication from Remote
+Humans. It covers AI tools and agents, how work is changing, and practical
+examples of the human advantage. This is the planned content description; no
+sample email has been sent.
+
+Expected volume: 500–1,000 subscribers initially, about 2,000–4,000 newsletter
+emails/month at four weekly issues, plus subscription-confirmation emails.
+There are currently zero subscribers and zero contacts.
+
+Recipient source: readers will sign up voluntarily on our website and confirm
+their email through a double opt-in link. No purchased, scraped or imported
+lists. Signups are currently disabled during setup/review.
+
+Bounce/complaint handling: SES configuration set mailcheap publishes bounces,
+complaints, deliveries, delays, rejections and rendering failures to SNS topic
+mailcheap-ses-events. Its confirmed HTTPS subscription is
+https://newsletter.remotehumans.ai/api/webhooks/ses. SNS signatures use version 2
+and are verified before processing. Mailcheap suppresses bounces/complaints;
+SES account-level bounce and complaint suppression are also enabled.
+Every newsletter includes a visible unsubscribe link and RFC 8058 one-click
+unsubscribe. The supplied legal business postal address is saved in the footer.
+
+Region: eu-north-1. Sending identity: mail.remotehumans.ai. RSA 2048 Easy DKIM
+CNAMEs have been published and resolve publicly. Custom MAIL FROM
+bounce.mail.remotehumans.ai is verified. DKIM verification is pending at the
+time of this response. Sending stays disabled until identity verification and
+production approval are confirmed.
 
 Website signup integration remains a separate task; no website repository was
 changed. Do not expose a Mailcheap API key in browser code.
