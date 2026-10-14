@@ -7,7 +7,8 @@ Updated: 14 October 2026, Europe/London.
 Mailcheap is deployed and healthy at https://newsletter.remotehumans.ai.
 HTTPS and the saved admin login passed live verification. Bring Your Own Brain
 exists, has confirmed opt-in enabled, and has zero contacts. Sending and signups
-remain disabled. No email was sent; no contact was created or imported.
+remain disabled. One owner-requested SES delivery test was sent on 14 October;
+no contact was created or imported.
 
 - Admin login: https://newsletter.remotehumans.ai/login
 - Newsletter: https://newsletter.remotehumans.ai/newsletters/6acdfdf439733a41284f204d
@@ -189,11 +190,27 @@ launch authorisation is now required. The existing SNS and QStash verification
 is recorded above; actual email delivery and bounce handling have not yet been
 exercised with email.
 
+## Owner-requested delivery test: 14 October 2026
+
+Elliott explicitly authorised one test to his Yahoo address. SES accepted one
+message from **Remote Humans <byob@mail.remotehumans.ai>**, reply-to
+**e@remotehumans.ai**, subject **Bring Your Own Brain: email delivery test**.
+The message used configuration set **mailcheap** and the existing scoped runtime
+credential. It included the saved postal address and identified itself as a test.
+
+Message ID: 011001a13ab9865b-fc9cae76-1dd2-4d2b-b6e2-332e9e65b338-000000.
+
+This was a direct SES transport test, not a Mailcheap campaign, subscription or
+confirmation flow. SES acceptance does not establish Yahoo inbox placement.
+Elliott must confirm receipt and whether it went to spam. No contact was created.
+Production sending and signup flags remain false. The first local CLI attempt
+failed JSON validation before sending; the corrected request was accepted once.
+
 ## Exact remaining steps
 
-1. Elliott must explicitly approve a controlled sending test and enabling
-   confirmation emails before public signups can launch. The earlier no-email
-   instruction remains in force; neither switch was changed.
+1. Elliott should confirm receipt of the requested Yahoo delivery test.
+   Separate approval is required for confirmation emails and public signups;
+   neither switch was changed.
 2. After that approval, verify delivery, confirmation and unsubscribe end to
    end, plus bounce handling. Confirm the first issue and its recipients before
    a campaign is sent. There are no contacts in the last verified newsletter.
@@ -246,5 +263,6 @@ changed. Do not expose a Mailcheap API key in browser code.
 - MongoDB UUID: qcldvire3pxjrqd7eig5bf4j
 - SNS: arn:aws:sns:eu-north-1:473041657562:mailcheap-ses-events
 
-No email or contact action occurred. No external account or payment details were
-created. remote-humans-agi and website repositories were not modified.
+One expressly authorised owner delivery test was sent on 14 October. No
+contacts, campaigns, external accounts or payment details were created.
+remote-humans-agi and website repositories were not modified.
