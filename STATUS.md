@@ -1,6 +1,6 @@
 # Bring Your Own Brain: Mailcheap setup status
 
-Updated: 13 October 2026, 21:56 Europe/London.
+Updated: 14 October 2026, Europe/London.
 
 ## Operational
 
@@ -64,13 +64,13 @@ remain disabled. No email was sent; no contact was created or imported.
 - Saved the runtime key as **AWS SES - Bring Your Own Brain** in the shared vault
   and configured Coolify runtime variables.
 - Submitted the production-access request; support case **179188520500640**.
-  The SES API currently labels review status DENIED, but the support correspondence
+  At submission, the SES API labelled review status DENIED, but the support correspondence
   says additional information is required before a final decision. It requests
   volume, opt-in, bounce handling and sample content/description. Do not interpret
   this as a final refusal without the case correspondence.
 - MAIL FROM and DKIM are verified. SES reports VerifiedForSendingStatus=true
   and DkimAttributes.Status=SUCCESS. All three issued CNAMEs resolve correctly.
-  Production access remains false.
+  Production access was initially false; it is now approved (14 October).
 - Elliott approved posting the prepared response. It was submitted and visibly
   confirmed in case correspondence at 11:34 BST on 13 October. The response
   gives 500–1,000 initial subscribers, 2,000–4,000 newsletter emails/month plus
@@ -168,37 +168,38 @@ credential was found. Elliott selected **e@remotehumans.ai** for newsletter
 replies; this is saved. No hello alias was created. No mail test was sent and
 no existing routing/DNS record was changed.
 
-## Latest approval check: 13 October, 21:56 BST
+## Production approval verified: 14 October 2026
 
-- The temporary byob-mailcheap CLI session has expired. The existing scoped
-  credential in **AWS SES - Bring Your Own Brain** successfully read SES status
-  without storing or exposing secret values.
-- ProductionAccessEnabled remains false, review status remains DENIED with
-  case 179188520500640, and SentLast24Hours remains zero. The previous case
-  correspondence requested more information, so the API label alone does not
-  establish a final refusal.
-- The AWS console session has also expired and now shows sign-in. No console
-  password exists in the saved AWS vault item. New support correspondence
-  cannot be checked until Elliott signs back in. The last verified case content
-  was the approved response posted at 11:34 BST; no later AWS reply was visible
-  at the previous check.
-- The follow-up **Finish BYOB Mailcheap setup** is paused for this operator
-  dependency. Sending and signup flags were not changed. No email, contact,
-  campaign, sending job or support reply was created.
+AWS's email for case **179188520500640**, received at **13:33 BST** on
+14 October, confirms immediate removal from the SES sandbox in Europe
+(Stockholm). The email was read through the Gmail connector; the local Gmail
+CLI currently needs reauthentication.
+
+The existing scoped SES vault credential independently confirmed:
+
+- ProductionAccessEnabled=true; SendingEnabled=true; review status GRANTED.
+- Quota: **50,000 messages/day**, maximum rate **14 messages/second**.
+- SentLast24Hours=0. No email was sent by this task.
+- mail.remotehumans.ai: verified for sending; DKIM SUCCESS; MAIL FROM SUCCESS.
+- Live HTTPS health endpoint returns ok=true, sendingEnabled=false and
+  signupsEnabled=false.
+
+The AWS dependency is resolved. The monitoring follow-up remains paused because
+launch authorisation is now required. The existing SNS and QStash verification
+is recorded above; actual email delivery and bounce handling have not yet been
+exercised with email.
 
 ## Exact remaining steps
 
-1. Sign back into the existing AWS account in the in-app browser, then tell
-   Codex to resume the Mailcheap setup. Account ID: **473041657562**. Open
-   support case **179188520500640**. Do not create an account or console access
-   for the scoped mailcheap-byob runtime user.
-2. Codex can then inspect any AWS response and resume monitoring. Production
-   access remains off. If AWS requests more evidence, prepare a concrete
-   response for Elliott's approval before posting it.
-3. After SES production access is verified, review launch readiness with Codex.
-   Provider configuration, DKIM, postal address and reply-to are complete.
-   Sending and signups stay off until explicit launch authorisation. No test
-   email is authorised. Website signup integration remains a separate task.
+1. Elliott must explicitly approve a controlled sending test and enabling
+   confirmation emails before public signups can launch. The earlier no-email
+   instruction remains in force; neither switch was changed.
+2. After that approval, verify delivery, confirmation and unsubscribe end to
+   end, plus bounce handling. Confirm the first issue and its recipients before
+   a campaign is sent. There are no contacts in the last verified newsletter.
+3. Public website signup integration is still a separate task. No website
+   repository was changed. It must use a server-side Mailcheap integration;
+   never expose a Mailcheap API key in browser code.
 
 ### AWS support response posted at 11:34 BST
 
