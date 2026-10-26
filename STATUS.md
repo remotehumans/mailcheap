@@ -1,20 +1,112 @@
 # Bring Your Own Brain: Mailcheap setup status
 
-Updated: 14 October 2026, Europe/London.
+Updated: 26 October 2026, Europe/London.
 
 ## Operational
 
 Mailcheap is deployed and healthy at https://newsletter.remotehumans.ai.
-HTTPS and the saved admin login passed live verification. Bring Your Own Brain
-exists, has confirmed opt-in enabled, and has zero contacts. Sending and signups
-remain disabled. One owner-requested SES delivery test was sent on 14 October;
-no contact was created or imported.
+Bring Your Own Brain launched on 26 October at https://www.remotehumans.ai/byob:
+the reader site adds real subscribers through `POST /api/v1/contacts`, with
+confirmed opt-in. Signups are on and sending is off; the live health check on
+26 October answered ok=true, sendingEnabled=false, signupsEnabled=true. The live
+app still runs the single-admin release (main, 023a03a).
+
+An upstream update is ready on branch `update/upstream-2026-10-26` and waits
+for Elliott's go-ahead: see "Upstream update awaiting deployment" below.
 
 - Admin login: https://newsletter.remotehumans.ai/login
 - Newsletter: https://newsletter.remotehumans.ai/newsletters/6acdfdf439733a41284f204d
 - Fork: https://github.com/remotehumans/mailcheap
 - Coolify: https://cool.remotehumans.co
 - Local checkout: /Users/elliott/Documents/AI Projects_local/mailcheap
+
+## Upstream update awaiting deployment (26 October 2026)
+
+Branch `update/upstream-2026-10-26` on https://github.com/remotehumans/mailcheap
+merges upstream main (42ca6fc) into the fork. All 1,302 tests, ESLint, the
+production Docker build and `git diff --check` pass. REVIEW.md records what
+happened to each fork commit, the findings fixed on the branch and the residual
+limits. Nothing was deployed, no email was sent and no contact or live
+database row was touched.
+
+What changes for us:
+
+- Sign-in is an emailed six-digit code to an address in `ADMIN_EMAILS`. The
+  admin password goes away.
+- Data is scoped by account, so the live database needs
+  `scripts/migrate-to-accounts.mjs` once, right after the deploy. Until it
+  runs, the BYOB key answers 401 and the reader site says "Sign-ups open very
+  soon".
+- The BYOB API contract is unchanged and is tested with an old-format key.
+- The licence is now AGPL-3.0-only. Keep the fork public.
+
+### Database migration
+
+No upstream migration exists. `scripts/migrate-to-accounts.mjs`, run inside
+the app container:
+
+1. Creates the owner's Better Auth user (verified email) and account, unless
+   they exist.
+2. Sets `accountId` on newsletters, contacts, campaigns, messages, events,
+   apikeys and suppressions that have none.
+3. Renames `sesMessageId` to `providerMessageId` on messages and events.
+4. Drops replaced indexes: contacts `email_1` (rebuilt as partial),
+   `subscribedAt_-1__id_-1`, `status_1_subscribedAt_-1__id_-1`; campaigns
+   `status_1`, `startedAt_-1`; messages and events `sesMessageId_1`;
+   suppressions `email_1`; alerts `key_1`. Mongoose builds the new indexes.
+
+It prints a JSON report with counts only, is a dry run without `--apply`,
+refuses an owner missing from `ADMIN_EMAILS`, and is safe to run again.
+
+### Environment variables (names only)
+
+Add in Coolify, runtime only:
+
+- `BETTER_AUTH_SECRET`: the current `SESSION_SECRET` value, so every
+  unsubscribe and confirm link already sent keeps working.
+- `SUPPRESSION_HASH_KEY`: new, `openssl rand -base64 48`, never the same as
+  the secret above. Save it in the vault; never change it.
+- `ADMIN_EMAILS`: the inbox Elliott signs in with (proposed: e@remotehumans.ai).
+  The old `ADMIN_EMAIL` is a placeholder address that can't receive codes.
+- `EMAIL_FROM`: `Remote Humans <byob@mail.remotehumans.ai>`, the sender the
+  current IAM policy allows. Sign-in codes go through SES from it.
+- `SES_AWS_ACCOUNT_ID`: 473041657562.
+
+Keep `ADMIN_EMAIL`, `ADMIN_PASSWORD` and `SESSION_SECRET` until the new release
+is verified, so a rollback still signs in. `SES_CONFIGURATION_SET` is no longer
+read: each account gets its own SES configuration set. `APP_URL` is already a
+build-time variable, which the static API docs need. Later, before sending:
+`CRON_SECRET`, and Upstash Redis for shared rate limits.
+
+### Deploy plan (needs Elliott's OK)
+
+1. Decide the `ADMIN_EMAILS` address.
+2. Back up the BYOB MongoDB (`mongodump` of database `mailcheap`) and check
+   the archive opens.
+3. Add the variables above in Coolify app `qeeqrl9snjfjoc4nrjpoeg8h`.
+4. Deploy the branch (or merge it into main first). Expect a few minutes of
+   reader-site signups answering "Sign-ups open very soon".
+5. In the container: `node scripts/migrate-to-accounts.mjs
+   --owner-email=<ADMIN_EMAILS address>`, check the counts against the
+   dashboard's last contact total, then run it again with `--apply`.
+6. Check that `/api/health` answers ok=true, sendingEnabled=false,
+   signupsEnabled=true. Call the signup API with the BYOB key and an invalid
+   email: 400 proves the key works without creating a contact.
+7. Elliott signs in at https://newsletter.remotehumans.ai/signin with a code
+   (one email to his own inbox) and checks the newsletter and contact counts.
+8. After a day without problems, remove `ADMIN_EMAIL`, `ADMIN_PASSWORD` and
+   `SESSION_SECRET`.
+
+Rollback: redeploy 023a03a with the old variables still in place. The old
+release ignores the new fields and collections. Its plain `contacts.email_1`
+index then can't be rebuilt beside the partial one, which only logs an index
+error. Restore the backup only if data is damaged.
+
+Before sending is switched on (separate approval): sign in to AWS again (the
+local CLI session expired on 26 October), widen IAM policy
+**MailcheapSESRuntime** to the tenant and configuration-set calls in the
+README with denials on deleting or changing `mail.remotehumans.ai`, add the
+domain on the Domains page, and set `CRON_SECRET`.
 
 ## Completed
 
@@ -113,7 +205,7 @@ SES_REGION, SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY, SES_CONFIGURATION_SET,
 SES_SNS_TOPIC_ARN, QSTASH_URL, QSTASH_TOKEN, QSTASH_CURRENT_SIGNING_KEY,
 QSTASH_NEXT_SIGNING_KEY. No secret variables are build-time variables.
 
-**SENDING_ENABLED=false; SIGNUPS_ENABLED=false.**
+**SENDING_ENABLED=false; SIGNUPS_ENABLED on since the 26 October launch.**
 The app also blocks sandbox, unknown or disabled SES accounts even if the
 sending flag is changed. Retain SESSION_SECRET to preserve old unsubscribe links.
 
