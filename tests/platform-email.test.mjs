@@ -112,10 +112,18 @@ describe("self-hosted server", () => {
 		assert.equal(platformEmails.at(-1).reply_to, undefined, "no MailCheap support address on a self-hosted server");
 	});
 
-	test("without it, codes and alerts go through SES outside every tenant, even with sending off", async () => {
+	test("without it, codes and alerts go through SES outside every tenant; with sending off, only codes go", async () => {
 		const before = counts();
 		await withEnv({ ...SELF_HOSTED, RESEND_API_KEY: "", SENDING_ENABLED: "false", ALLOWED_EMAILS: "self-ses@example.com" }, async () => {
+			await m.alerts.sendAlert({ accountId: null, key: "self-ses-off", title: "Self-hosted alert while off", detail: "For the admins" });
+			await assert.rejects(m.platform.sendPlatformEmail({ to: "admin@example.com", subject: "Summary", text: "Hi" }), /Sending is off/);
+			assert.equal(m.platform.canSendPlatformEmail(), false);
+		});
+		assert.deepEqual(added(before), { resend: 0, ses: 0, postshiba: 0, customer: 0 }, "an alert while sending is off is only logged");
+		await withEnv({ ...SELF_HOSTED, RESEND_API_KEY: "", SENDING_ENABLED: "false", ALLOWED_EMAILS: "self-ses@example.com" }, async () => {
 			assert.deepEqual(await requestCode("self-ses@example.com"), { email: "self-ses@example.com" });
+		});
+		await withEnv({ ...SELF_HOSTED, RESEND_API_KEY: "", SENDING_ENABLED: "true" }, async () => {
 			await m.alerts.sendAlert({ accountId: null, key: "self-ses", title: "Self-hosted alert", detail: "For the admins" });
 		});
 		assert.deepEqual(added(before), { resend: 0, ses: 2, postshiba: 0, customer: 0 });
