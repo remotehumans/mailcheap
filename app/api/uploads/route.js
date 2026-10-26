@@ -1,47 +1,56 @@
+import { getErrorStatus, toActionError } from "@/lib/actions/errors";
+import { runAction } from "@/lib/actions/run-action";
+import { getCurrentAccount } from "@/lib/auth";
 import { readLimitedBody } from "@/lib/request-body";
-import { getSession } from "@/lib/auth";
-import { putImage } from "@/lib/blob";
 import { MAX_UPLOAD_BYTES } from "@/lib/upload-image";
-import { slugify } from "@/lib/slug";
 
-// The declared type must match the file's first bytes, so nothing but pictures ends up on the CDN.
-const IMAGE_TYPES = {
-	"image/png": { extension: "png", signature: "\x89PNG" },
-	"image/jpeg": { extension: "jpg", signature: "\xff\xd8\xff" },
-	"image/gif": { extension: "gif", signature: "GIF8" },
-	"image/webp": { extension: "webp", signature: "RIFF", marker: "WEBP" },
-};
+// Long enough for a 4 MB image over a slow connection; the other routes keep the 10-second default.
+const UPLOAD_TIMEOUT_MS = 60_000;
 
-export async function POST(request) {
-	if (!(await getSession())) return Response.json({ error: "Unauthorized" }, { status: 401 });
-	if (!process.env.BLOB_READ_WRITE_TOKEN) {
-		return Response.json({ error: "Image uploads need a Vercel Blob store (BLOB_READ_WRITE_TOKEN)" }, { status: 503 });
-	}
+// The image picker's library: the account's images, newest first, through the same list_images action as the API.
+export async function GET(request) {
+	const current = await getCurrentAccount();
+	if (!current) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-	const contentType = request.headers.get("content-type");
-	const type = IMAGE_TYPES[contentType];
-	if (!type) return Response.json({ error: "Use a PNG, JPEG, GIF or WebP image" }, { status: 415 });
-
-	let bytes;
-	try { bytes = await readLimitedBody(request, MAX_UPLOAD_BYTES); }
-	catch (error) { return Response.json({ error: "Invalid request body" }, { status: error.status || 400 }); }
-	if (bytes.length > MAX_UPLOAD_BYTES) {
-		return Response.json({ error: "Images must be under 4 MB" }, { status: 413 });
-	}
-	if (!startsWith(bytes, type.signature) || (type.marker && !startsWith(bytes, type.marker, 8))) {
-		return Response.json({ error: "This file isn't a valid image" }, { status: 415 });
-	}
-
-	const name = slugify(request.headers.get("x-file-name"), 60) || "image";
+	const cursor = new URL(request.url).searchParams.get("cursor")?.slice(0, 200);
 	try {
-		const url = await putImage(`images/${name}.${type.extension}`, bytes, contentType);
-		return Response.json({ url });
+		const { images, nextCursor } = await runAction("list_images", { ...current, via: "dashboard", input: { cursor: cursor || undefined } });
+		return Response.json({ images, nextCursor });
 	} catch (error) {
-		console.error("[uploads] Upload failed:", error);
-		return Response.json({ error: "Upload failed, try again" }, { status: 502 });
+		const { code, message } = toActionError(error);
+		return Response.json({ error: message, code }, { status: getErrorStatus(code) });
 	}
 }
 
-function startsWith(bytes, signature, offset = 0) {
-	return [...signature].every((character, index) => bytes[offset + index] === character.charCodeAt(0));
+// The editor's and the picker's uploads: the file as the body, through the same upload_image action as the API.
+// Archives on <slug>.<shared domain> are the same site as the dashboard when the shared domain is the app's own,
+// so the session cookie comes with their requests too: only the dashboard's own pages upload.
+export async function POST(request) {
+	const site = request.headers.get("sec-fetch-site");
+	if (site && site !== "same-origin") return Response.json({ error: "Forbidden" }, { status: 403 });
+	const current = await getCurrentAccount();
+	if (!current) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+	let bytes;
+	try {
+		bytes = Buffer.from(await readLimitedBody(request, MAX_UPLOAD_BYTES, UPLOAD_TIMEOUT_MS));
+	} catch (error) {
+		return Response.json({ error: error.status === 413 ? "Images must be under 4 MB" : "Invalid request body" }, { status: error.status || 400 });
+	}
+	if (bytes.length > MAX_UPLOAD_BYTES) return Response.json({ error: "Images must be under 4 MB" }, { status: 413 });
+	try {
+		const { url } = await runAction("upload_image", {
+			...current,
+			via: "dashboard",
+			input: {
+				base64: bytes.toString("base64"),
+				fileName: request.headers.get("x-file-name")?.slice(0, 200),
+				contentType: request.headers.get("content-type")?.slice(0, 100),
+			},
+		});
+		return Response.json({ url });
+	} catch (error) {
+		const { code, message } = toActionError(error);
+		return Response.json({ error: message, code }, { status: code === "validation_failed" ? 415 : getErrorStatus(code) });
+	}
 }

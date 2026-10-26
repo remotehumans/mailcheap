@@ -1,5 +1,7 @@
 import { connectDb } from "@/lib/db";
+import { WEB_FILTER } from "@/lib/publish-to";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { readLimitedText } from "@/lib/request-body";
 import { isObjectIdString } from "@/lib/validation";
 import Campaign from "@/models/Campaign";
 
@@ -11,19 +13,20 @@ function noContent() {
 }
 
 // Archive pages send one beacon per issue per browser and day; this only counts the ones from people.
+// Only an issue on the website can be counted, whatever its account.
 export async function POST(request) {
 	const userAgent = request.headers.get("user-agent") ?? "";
 	let body;
 	try { body = JSON.parse(await readLimitedText(request, 2048)); }
-	catch (error) { return NextResponse.json({ error: "Invalid request body" }, { status: error.status || 400 }); }
+	catch { return noContent(); }
 	const { id } = body || {};
 	if (!isObjectIdString(id) || !userAgent || BOT_PATTERN.test(userAgent)) return noContent();
 	if (await isRateLimited({ ...RATE_LIMIT, key: getClientIp(request.headers) })) return noContent();
 
 	await connectDb();
 	await Campaign.updateOne(
-		{ _id: id, archiveSlug: { $type: "string" }, status: { $in: ["sending", "paused", "sent"] } },
+		{ _id: id, archiveSlug: { $type: "string" }, ...WEB_FILTER },
 		{ $inc: { webViews: 1 } }
-	);
+	).setOptions({ crossAccount: true });
 	return noContent();
 }

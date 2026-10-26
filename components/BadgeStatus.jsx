@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 
-export default function BadgeStatus({ status, label, className }) {
+// children: after the label, like a menu's chevron.
+export default function BadgeStatus({ status, label, className, children }) {
 	const key = String(status ?? "").toLowerCase();
 
 	return (
@@ -10,13 +11,18 @@ export default function BadgeStatus({ status, label, className }) {
 				className
 			)}
 		>
-			<span className={cn("size-1.5 rounded-full", DOT_TONES[STATUS_TONES[key] || "gray"])} />
+			<DotStatus status={key} />
 			{label || statusLabel(key)}
+			{children}
 		</span>
 	);
 }
 
-function statusLabel(status) {
+export function DotStatus({ status, className }) {
+	return <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", DOT_TONES[STATUS_TONES[status] || "gray"], className)} />;
+}
+
+export function statusLabel(status) {
 	const text = status.replaceAll("_", " ");
 	return text.charAt(0).toUpperCase() + text.slice(1);
 }
@@ -31,6 +37,10 @@ const DOT_TONES = {
 
 const STATUS_TONES = {
 	active: "green",
+	trialing: "green",
+	past_due: "amber",
+	incomplete: "amber",
+	unpaid: "red",
 	sent: "green",
 	delivered: "green",
 	success: "green",
@@ -48,4 +58,6 @@ const STATUS_TONES = {
 	complained: "red",
 	failed: "red",
 	shutdown: "red",
+	deleting: "red",
+	blocked: "red",
 };
