@@ -201,7 +201,7 @@ test("self-hosted, without MAILCHEAP_CLOUD: no paywall, no plan limits, every ac
 	assert.equal(getAccountSendProblem({}).code, ERROR_CODES.subscriptionRequired, "back on MailCheap Cloud");
 });
 
-test("signup limits grow with the plan, from Starter's; a self-hosted server gets the largest plan's", () => {
+test("signup limits grow with the plan, from Starter's; a self-hosted server keeps Starter's", () => {
 	assert.deepEqual(
 		PLANS.map(({ id, signupScale }) => [id, signupScale]),
 		[
@@ -220,5 +220,5 @@ test("signup limits grow with the plan, from Starter's; a self-hosted server get
 	const perKey = { name: "api-contacts-key", limit: 600, window: "1 h" };
 	assert.deepEqual(scaleSignupLimit(perKey, { plan: "pro" }), { ...perKey, limit: 3000 });
 	assert.equal(perKey.limit, 600, "the base stays as it is");
-	selfHosted(() => assert.equal(getSignupScale({}), 50));
+	selfHosted(() => assert.equal(getSignupScale({ plan: "ultra", subscriptionStatus: "active" }), 1));
 });
