@@ -302,6 +302,7 @@ before(async () => {
 		registry: await import("../lib/actions/registry.js"),
 		Account: (await import("../models/Account.js")).default,
 		Campaign: (await import("../models/Campaign.js")).default,
+		ApiKey: (await import("../models/ApiKey.js")).default,
 		Contact: (await import("../models/Contact.js")).default,
 		Newsletter: (await import("../models/Newsletter.js")).default,
 	};
@@ -397,6 +398,11 @@ describe("connecting with the official MCP client", () => {
 		const draft = await client.callTool({ name: "create_campaign", arguments: { subject: "From ChatGPT", content: "# Hi" } });
 		assert.equal(draft.structuredContent.source, "api");
 		assert.ok(await m.Campaign.exists({ accountId: users.owner.accountId, subject: "From ChatGPT" }));
+		// A key would outlive the app's access, so a connected app can't create one.
+		const minted = await client.callTool({ name: "create_api_key", arguments: { name: "From ChatGPT", level: "full" } });
+		assert.equal(minted.isError, true);
+		assert.equal(JSON.parse(minted.content[0].text).error.code, "forbidden");
+		assert.equal(await m.ApiKey.countDocuments({ accountId: users.owner.accountId, name: "From ChatGPT" }), 0);
 		await client.close();
 	});
 
