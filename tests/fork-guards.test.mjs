@@ -56,3 +56,11 @@ test("Better Auth's routes refuse an oversized body before reading it", async ()
 	);
 	assert.equal(streamed.status, 413);
 });
+
+test("a share image's local logo is read from public/ only", async () => {
+	const { loadImage } = await import("../lib/og-image.js");
+	assert.match(await loadImage("/icon-192.png"), /^data:image\/png;base64,/);
+	assert.equal(await loadImage("/../package.json"), null);
+	assert.equal(await loadImage("/../../../../etc/hosts"), null);
+	assert.equal(await loadImage("/logos/../../../package.json"), null);
+});
