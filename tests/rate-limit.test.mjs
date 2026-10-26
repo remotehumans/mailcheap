@@ -71,3 +71,13 @@ test("memory limits open again once the window has passed", () => {
 	assert.equal(isLimitedInMemory({ ...limits, key: "a" }, start + 2000), true);
 	assert.equal(isLimitedInMemory({ ...limits, key: "a" }, start + 10 * 60_000 + 1000), false);
 });
+
+test("a flood of new keys pushes out counts whose window has passed before a live one", () => {
+	const start = Date.parse("2026-10-26T12:00:00Z");
+	const inbox = { name: "test-flood-inbox", limit: 1, window: "1 d", key: "owner@example.com" };
+	assert.equal(isLimitedInMemory(inbox, start), false);
+	const spoofed = { name: "test-flood-ip", limit: 60, window: "1 m" };
+	for (let i = 0; i < 60_000; i++) isLimitedInMemory({ ...spoofed, key: `first-${i}` }, start + 1000);
+	for (let i = 0; i < 60_000; i++) isLimitedInMemory({ ...spoofed, key: `second-${i}` }, start + 5 * 60_000);
+	assert.equal(isLimitedInMemory(inbox, start + 6 * 60_000), true, "the inbox's count is still there");
+});
